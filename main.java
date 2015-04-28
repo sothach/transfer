@@ -1,5 +1,8 @@
 package nodescala
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -17,14 +20,15 @@ object Main {
 
     // 2. create a future that expects some user input `x`
     //    and continues with a `"You entered... " + x` message
-    val userInterrupted = Future.userInput("Hit ENTER to cancel... ") continueWith {
+    val start = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime)
+    val userInterrupted = Future.userInput(f"Hit ENTER to cancel... $start") continueWith {
       f => f"You entered... ${f.now}"
     }
 
     // TO IMPLEMENT
     // 3. create a future that completes after 20 seconds
     //    and continues with a `"Server timeout!"` message
-    val timeOut: Future[String] = Future.delay(20 seconds).continue(_ => "Server timeout!")
+    val timeOut: Future[String] = Future.delay(20 seconds).continueWith(_ => "Server timeout!")
 
     // TO IMPLEMENT
     // 4. create a future that completes when either 20 seconds elapse
@@ -36,8 +40,9 @@ object Main {
     terminationRequested onSuccess {
       case msg =>
         println(msg)
+        val end = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime)
         myServerSubscription.unsubscribe()
-        println("Bye!")
+        println(f"Bye! ($end)")
     }
   }
 
