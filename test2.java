@@ -4,7 +4,7 @@ import java.util.NoSuchElementException
 
 import org.junit.runner.RunWith
 import org.scalatest._
-import org.scalatest.concurrent.Timeouts
+import org.scalatest.concurrent.{AsyncAssertions, Timeouts}
 import org.scalatest.junit.JUnitRunner
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 @RunWith(classOf[JUnitRunner])
-class MoreTests extends FunSuite with Matchers with Timeouts {
+class MoreTests extends FunSuite with Matchers with Timeouts with AsyncAssertions {
 
   val value1 = 200
   val value2 = 300
@@ -68,7 +68,9 @@ class MoreTests extends FunSuite with Matchers with Timeouts {
   }
 
   test("delay: times-out") {
-    val f1 = Future.delay(100 millisecond)
+    val f1 = Future {
+      Future.delay(100 millisecond)
+    }
     Await.result(f1, 100 millisecond)
 
     val f2 = Future.delay(500 millisecond)
@@ -78,6 +80,40 @@ class MoreTests extends FunSuite with Matchers with Timeouts {
     } catch {
       case e: TimeoutException => // correct
     }
+  }
+  // A Future should complete after 3s when using a delay of 1s
+  // A Future should not complete after 1s when using a delay of 3s
+  test("A Future should be completed after 1s delay") {
+    val w = new Waiter
+    val start = System.currentTimeMillis()
+
+    Future.delay(1 second) onComplete { case _ =>
+      val duration = System.currentTimeMillis() - start
+      duration should (be >= 1000L and be < 1100L)
+
+      w.dismiss()
+    }
+
+    w.await(timeout(2 seconds))
+  }
+
+  test("Two sequential delays of 1s should delay by 2s") {
+    val w = new Waiter
+    val start = System.currentTimeMillis()
+
+    val combined = for {
+      f1 <- Future.delay(1 second)
+      f2 <- Future.delay(1 second)
+    } yield ()
+
+    combined onComplete { case _ =>
+      val elapsed = System.currentTimeMillis() - start
+      elapsed should (be >= 2000L and be < 2100L)
+
+      w.dismiss()
+    }
+
+    w.await(timeout(3 seconds))
   }
 
   test("now combinator") {
@@ -181,4 +217,3 @@ class MoreTests extends FunSuite with Matchers with Timeouts {
   }
 
 }
-
