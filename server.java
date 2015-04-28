@@ -5,11 +5,11 @@ import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
-import scala.async.Async.{async, await}
 import scala.collection.JavaConversions._
 import scala.collection._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import scala.util.{Failure, Success}
 
 /** Contains utilities common to the NodeScala© framework.
   */
@@ -29,7 +29,7 @@ trait NodeScala {
     *  @param token        the cancellation token
     *  @param response         the response to write back
     */
-  private def respond(exchange: Exchange, token: CancellationToken, response: Response): Unit = { //Future {
+  private def respond(exchange: Exchange, token: CancellationToken, response: Response): Unit = {
     response.takeWhile(_=> token.nonCancelled) foreach exchange.write
     exchange.close()
   }
@@ -46,15 +46,18 @@ trait NodeScala {
   def start(relativePath: String)(handler: Request => Response): Subscription = {
     val listener = createListener(relativePath)
     val subscription = listener.start()
-    def processAsync(token: CancellationToken): Future[Unit] = async {
+    def processAsync(token: CancellationToken): Unit =
       if (token.isCancelled) subscription.unsubscribe()
       else {
-        val request = await(listener.nextRequest())
-        respond(request._2, token, handler(request._1))
-        processAsync(token)
+        listener.nextRequest onComplete {
+          case Success((request, exchange)) =>
+            respond(exchange, token, handler(request))
+            processAsync(token)
+          case Failure(e) => throw e
+        }
       }
-    }
-    Future.run()(processAsync)
+
+    Future.run()(t => Future(processAsync(t)))
   }
 
 }
