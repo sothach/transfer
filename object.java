@@ -57,18 +57,14 @@ package object nodescala {
 
     /** Returns a future with a unit value that is completed after time `t`.
      */
-    def delay(t: Duration): Future[Unit] = Future {
-      blocking {
-        Thread.sleep(t.toMillis)
-      }
-    }
+    def delay(t: Duration): Future[Unit] = Future(Try(Await.result(never[Unit], t)))
 
     /** Completes this future with user input.
      */
     def userInput(message: String): Future[String] = Future {
-      blocking {
+      //blocking {
         StdIn.readLine(message)
-      }
+      //}
     }
 
     /** Creates a cancellable context for an execution and runs it.
