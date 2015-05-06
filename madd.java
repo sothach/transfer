@@ -32,7 +32,7 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
     title = "Query Wikipedia"
     minimumSize = new Dimension(900, 600)
 
-    val button = new Button("Suggest") {
+    val button = new Button("Get") {
       icon = new javax.swing.ImageIcon(javax.imageio.ImageIO.read(
         this.getClass.getResourceAsStream("/suggestions/wiki-icon.png")))
     }
@@ -83,14 +83,15 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
     val searchTerms: Observable[String] = searchTermField.textValues
 
     // TO IMPLEMENT
-    val suggestions: Observable[Try[List[String]]] = searchTerms.sanitized.concatRecovered(str => {
+    val suggestions: Observable[Try[List[String]]] = 
+      searchTerms.sanitized.concatRecovered(str => {
       ObservableEx(wikipediaSuggestion(str)).timedOut(5)
     })
 
 
     // TO IMPLEMENT
     val suggestionSubscription: Subscription =  suggestions.observeOn(eventScheduler) subscribe {
-      x => x match {
+      _ match {
         case Success(t) => suggestionList.listData = t
         case Failure(f) => status.text = f.getMessage
       }
@@ -106,8 +107,8 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
     })
 
     // TO IMPLEMENT
-    val pageSubscription: Subscription = pages.observeOn(eventScheduler) subscribe { x =>
-      x match {
+    val pageSubscription: Subscription = pages.observeOn(eventScheduler) subscribe {
+      _ match {
         case Success(t) => editorpane.text = t
         case Failure(f) => status.text = f.getMessage
       }
