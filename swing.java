@@ -1,19 +1,12 @@
 package suggestions
 package gui
 
-import rx.lang.scala.subjects.PublishSubject
+import rx.lang.scala.Observable
 import rx.lang.scala.subscriptions.Subscription
-import rx.subjects.Subject
 
 import scala.language.reflectiveCalls
-import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConverters._
-import scala.concurrent._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{ Try, Success, Failure }
 import scala.swing.Reactions.Reaction
 import scala.swing.event.Event
-import rx.lang.scala.Observable
 
 /** Basic facilities for dealing with Swing-like components.
 *
@@ -55,28 +48,29 @@ trait SwingApi {
       * @param field the text field
       * @return an observable with a stream of text field updates
       */
-    def textValues: Observable[String] = Observable(
-      observer => {
-        val reaction:Reaction = {case ValueChanged(tf) => observer.onNext(tf.text)}
-        field.subscribe(reaction)
-        Subscription(field.unsubscribe(reaction))
-      })
+    def textValues: Observable[String] = Observable(observer => {
+      val reaction: Reaction = {
+        case ValueChanged(textField) => observer.onNext(textField.text)
+      }
+      field.subscribe(reaction)
+      Subscription(field.unsubscribe(reaction))
+    })
   }
 
   implicit class ButtonOps(button: Button) {
 
     /** Returns a stream of button clicks.
-     *
-     * @param field the button
-     * @return an observable with a stream of buttons that have been clicked
-     */
-    def clicks: Observable[Button] = Observable(
-      observer => {
-        val reaction:Reaction = {case ButtonClicked(b) => observer.onNext(b)}
-        button.subscribe(reaction)
-        Subscription(button.unsubscribe(reaction))
-      })
+      *
+      * @param field the button
+      * @return an observable with a stream of buttons that have been clicked
+      */
+    def clicks: Observable[Button] = Observable(observer => {
+      val reaction: Reaction = {
+        case ButtonClicked(butt) => observer.onNext(butt)
+      }
+      button.subscribe(reaction)
+      Subscription(button.unsubscribe(reaction))
+    })
   }
-
 
 }
