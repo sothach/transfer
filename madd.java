@@ -83,9 +83,9 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
     val searchTerms: Observable[String] = searchTermField.textValues
 
     // TO IMPLEMENT
-    val suggestions: Observable[Try[List[String]]] = 
+    val suggestions: Observable[Try[List[String]]] =
       searchTerms.sanitized.concatRecovered(str => {
-      ObservableEx(wikipediaSuggestion(str)).timedOut(5)
+        wikiSuggestResponseStream(str).timedOut(5)
     })
 
 
@@ -103,7 +103,7 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
 
     // TO IMPLEMENT
     val pages: Observable[Try[String]] = selections.sanitized.concatRecovered(str => {
-      ObservableEx(wikipediaPage(str)).timedOut(5)
+      wikiPageResponseStream(str).timedOut(5)
     })
 
     // TO IMPLEMENT
